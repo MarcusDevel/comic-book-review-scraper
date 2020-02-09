@@ -1,10 +1,10 @@
 package com.ojerindem.comicscraper.scraper
 
-import java.io.{FileWriter}
+import java.io.FileWriter
+import java.util.regex.Pattern
 
 import com.ojerindem.comicscraper.helper.ParseObjects.{ComicIssueDetail, ReleaseDateReleaseEndTuple, WriterArtistCriticReviewCntUserReviewCntTuple}
-import com.ojerindem.comicscraper.helper.Utils.{getUrl,getFilePath}
-
+import com.ojerindem.comicscraper.helper.Utils.{getFilePath, getUrl}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
@@ -68,8 +68,58 @@ object ComicScraper {
     dateTuple
   }
 
+  private def formatReleaseMonth(month: String) = {
+    val formattedReleaseMonth = month.take(3) match {
+      case "Jan" => "01"
+      case "Feb" => "02"
+      case "Mar" => "03"
+      case "Apr" => "04"
+      case "May" => "05"
+      case "Jun" => "06"
+      case "Jul" => "07"
+      case "Aug" => "08"
+      case "Sep" => "09"
+      case "Oct" => "10"
+      case "Nov" => "11"
+      case "Dec" => "12"
+      case _ => ""
+    }
+    formattedReleaseMonth
+
+  }
+
+  private def formatReleaseDate(date: String) = {
+    val regex = "(\\w+)\\s(\\d+)\\s(\\d+)".r
+    val formattedReleaseDate = Option(date) match {
+      case Some(value) => {
+        val regex(month,day,year) = date
+
+        val formattedMonth = formatReleaseMonth(month)
+
+        s"$year-$formattedMonth-$day"
+      }
+      case None => ""
+    }
+    formattedReleaseDate
+  }
+
+  private def getReleaseDate(url: String) = {
+    url.endsWith("/") match {
+      case true => ""
+      case false =>
+        val comicIndividualIssueDoc = Jsoup.connect(url).validateTLSCertificates(false).get()
+        val releaseDate = try {comicIndividualIssueDoc.select("#issue-summary a").text } catch{case x: IndexOutOfBoundsException => ""}
+        val formattedReleaseDate = releaseDate.replaceAll(",","")
+
+        "(\\w+)\\s(\\d+)\\s(\\d+)".r.findFirstIn(formattedReleaseDate) match {
+          case Some(value) => formatReleaseDate(value)
+          case None => ""
+        }
+    }
+  }
+
   private def getSpecificIssueDetails(doc: Document, elem: Element,url: String) = {
-    val regex = "#(\\d+)".r
+    val regex = "(\\d+|\\w+)".r
     val name = try {doc.select(".container h1 span").get(0).text() } catch{case x: IndexOutOfBoundsException => ""}
     val publisher = try {doc.select("#issue-summary a").get(0).text() } catch{case x: IndexOutOfBoundsException => ""}
     val releaseStart = try {formatDate(doc.select("#issue-summary span").get(1).text()).releaseStart } catch{case x: IndexOutOfBoundsException => ""}
@@ -86,12 +136,14 @@ object ComicScraper {
       case Some(value) => value.group(1).toString
       case None => ""
     }
+    val formattedUrl = s"$url/$cleanIssueNum"
+    val releaseDate = getReleaseDate(formattedUrl)
     val formatCorrector = (issueWriter,issueArtist,criticIssueReviews,userIssueReviews) match {
       case (a,b,"","") => WriterArtistCriticReviewCntUserReviewCntTuple("","",a,b)
       case (a,b,c,"") => WriterArtistCriticReviewCntUserReviewCntTuple(a,"",b,c)
       case (a,b,c,d) => WriterArtistCriticReviewCntUserReviewCntTuple(a,b,c,d)
     }
-    ComicIssueDetail(url,publisher,name,formatCorrector.writer,formatCorrector.artist,releaseStart,releaseEnd,cleanIssueNum,criticIssueReview,userIssueReview,formatCorrector.criticReviewCount,formatCorrector.criticReviewCount)
+    ComicIssueDetail(formattedUrl,publisher,name,formatCorrector.writer,formatCorrector.artist,releaseDate,releaseStart,releaseEnd,cleanIssueNum,criticIssueReview,userIssueReview,formatCorrector.criticReviewCount,formatCorrector.userReviewCount)
 
   }
 
@@ -117,13 +169,16 @@ object ComicScraper {
 
   private def getComicIssueDetails(doc: Document, url: String, issueCount: Int) = {
     val comicIssuesSection = doc.select(".series-page-list li")//.asScala
-    for (i <- 0 to issueCount - 1) yield getSpecificIssueDetails(doc,comicIssuesSection.get(i),url)
+
+    val indexedSeqComicIssuesSplit = for (i <- 0 to issueCount - 1) yield comicIssuesSection.get(i)
+    for(comicIssue <- indexedSeqComicIssuesSplit.par) yield getSpecificIssueDetails(doc,comicIssue,url)
+
   }
 
   def createPublisherCsv(doc: Document, fileName: String) = {
     val f = getFilePath(fileName)
     val writer = new FileWriter(f)
-    try { writer.append("url,publisher,name,writer,artist,release_start,release_end,issue_number,critic_review_score,user_review_score,critic_review_count,user_review_count").append("\n") }
+    try { writer.append("url,publisher,name,writer,artist,release_date,release_start,release_end,issue_number,critic_review_score,user_review_score,critic_review_count,user_review_count").append("\n") }
     for (url <- getPublisherComicUrls(doc).par)
       yield {
         val comicUrl = Jsoup.connect(url).validateTLSCertificates(false).get()

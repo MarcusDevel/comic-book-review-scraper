@@ -20,6 +20,7 @@ object ParseObjects {
                                name: String,
                                writer: String,
                                artist: String,
+                               releaseDate: String,
                                releaseStart: String,
                                releaseEnd: String,
                                issueNumber: String,
