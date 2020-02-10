@@ -9,7 +9,6 @@
 .cache-tests
 .history
 .lib/
-.idea/
 dist/*
 target/
 lib_managed/
