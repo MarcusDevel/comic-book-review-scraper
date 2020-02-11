@@ -17,6 +17,6 @@ echo "Running comic scraper ..."
 docker run --rm -v $PWD:/opt/app comic-scraper $1
 echo "Creating zip ..."
 zip comic-reviews.zip *.csv
-echo"Cleaning up...."
+echo "Cleaning up...."
 rm *.jar
 rm -r target

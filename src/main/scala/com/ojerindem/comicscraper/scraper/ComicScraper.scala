@@ -1,10 +1,10 @@
 package com.ojerindem.comicscraper.scraper
 
 import java.io.FileWriter
-import java.util.regex.Pattern
+import java.net.SocketTimeoutException
 
-import com.ojerindem.comicscraper.helper.ParseObjects.{ComicIssueDetail, ReleaseDateReleaseEndTuple, WriterArtistCriticReviewCntUserReviewCntTuple}
-import com.ojerindem.comicscraper.helper.Utils.{getFilePath, getUrl}
+import com.ojerindem.comicscraper.helper.ParseObjects.{ComicIssueDetail, WriterArtistCriticReviewCntUserReviewCntTuple}
+import com.ojerindem.comicscraper.helper.Utils._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
@@ -13,107 +13,28 @@ import scala.collection.parallel.CollectionConverters._
 
 object ComicScraper {
 
-  private def caseClassToString(comic: ComicIssueDetail) = {
-    val comicStr = comic.toString
-    val comicLength = comicStr.length
-    comicStr
-      .substring(0,comicLength - 1)
-      .replaceAll("\"","")
-      .replaceAll("\\w(,)\\s","\\w ")
-      .replaceAll(",","\",\"")
-      .replaceAll("ComicIssueDetail\\(", "\"")
-      .replaceAll("\\)\\)", "\\)\"") + "\""
-  }
-
   private def getComicIssueCount(doc: Document) = {
     val summarySection = doc.select("#issue-summary a").asScala
     val numOfComicIssues = try {summarySection(1).text } catch { case x: IndexOutOfBoundsException => "0" }
     numOfComicIssues.toInt
   }
 
-  private def formatMonth(month: String) = {
-    val formattedMonth = month match {
-      case "Jan" => "-01"
-      case "Feb" => "-02"
-      case "Mar" => "-03"
-      case "Apr" => "-04"
-      case "May" => "-05"
-      case "Jun" => "-06"
-      case "Jul" => "-07"
-      case "Aug" => "-08"
-      case "Sep" => "-09"
-      case "Oct" => "-10"
-      case "Nov" => "-11"
-      case "Dec" => "-12"
-      case "Present" => "2099-00"
-      case _ => null
-    }
-    formattedMonth
-
-  }
-
-  private def formatDate(date: String) = {
-    val regex = "Release:\\s*([a-zA-Z]*)\\s*(\\d*)\\s*-*\\s*([a-zA-Z]*)\\s*(\\d*)".r
-    val dateTuple = Option(date) match {
-      case Some(value) => {
-        val regex(firstMonth,firstYear,secondMonth,secondYear) = date
-
-        val fMonth = formatMonth(firstMonth)
-        val sMonth = formatMonth(secondMonth)
-
-        ReleaseDateReleaseEndTuple((firstYear + fMonth),(secondYear + sMonth))
-      }
-      case None => null
-    }
-    dateTuple
-  }
-
-  private def formatReleaseMonth(month: String) = {
-    val formattedReleaseMonth = month.take(3) match {
-      case "Jan" => "01"
-      case "Feb" => "02"
-      case "Mar" => "03"
-      case "Apr" => "04"
-      case "May" => "05"
-      case "Jun" => "06"
-      case "Jul" => "07"
-      case "Aug" => "08"
-      case "Sep" => "09"
-      case "Oct" => "10"
-      case "Nov" => "11"
-      case "Dec" => "12"
-      case _ => ""
-    }
-    formattedReleaseMonth
-
-  }
-
-  private def formatReleaseDate(date: String) = {
-    val regex = "(\\w+)\\s(\\d+)\\s(\\d+)".r
-    val formattedReleaseDate = Option(date) match {
-      case Some(value) => {
-        val regex(month,day,year) = date
-
-        val formattedMonth = formatReleaseMonth(month)
-
-        s"$year-$formattedMonth-$day"
-      }
-      case None => ""
-    }
-    formattedReleaseDate
-  }
-
   private def getReleaseDate(url: String) = {
     url.endsWith("/") match {
       case true => ""
       case false =>
-        val comicIndividualIssueDoc = Jsoup.connect(url).validateTLSCertificates(false).get()
-        val releaseDate = try {comicIndividualIssueDoc.select("#issue-summary a").text } catch{case x: IndexOutOfBoundsException => ""}
-        val formattedReleaseDate = releaseDate.replaceAll(",","")
+        try {
+          val comicIndividualIssueDoc = Jsoup.connect(url).validateTLSCertificates(false).get()
+          val releaseDate = try {comicIndividualIssueDoc.select("#issue-summary a").text } catch{case x: IndexOutOfBoundsException => ""}
+          val formattedReleaseDate = releaseDate.replaceAll(",","")
 
-        "(\\w+)\\s(\\d+)\\s(\\d+)".r.findFirstIn(formattedReleaseDate) match {
-          case Some(value) => formatReleaseDate(value)
-          case None => ""
+          "(\\w+)\\s(\\d+)\\s(\\d+)".r.findFirstIn(formattedReleaseDate) match {
+            case Some(value) => formatReleaseDate(value)
+            case None => ""
+          }
+        }
+        catch {
+          case x: SocketTimeoutException => ""
         }
     }
   }
@@ -150,7 +71,6 @@ object ComicScraper {
   private def getPublisherComicCount(doc: Document) = {
     val regex = "\\d+".r
     val seriesCount = doc.select(".tabs .selected").text
-    //println("s count: "+ seriesCount)
     val cleanedSeriesCount = regex.findFirstMatchIn(seriesCount)
     val cleanSeriesCount =
       cleanedSeriesCount match  {
@@ -187,11 +107,100 @@ object ComicScraper {
         for (issueDetail <- issueDetails)
           yield {
             val comicIssueDetailCaseClass = caseClassToString(issueDetail)
-            //println(comicIssueDetailCaseClass)
             try { writer.append(comicIssueDetailCaseClass).append("\n") }
           }
       }
     writer.close
+  }
+
+  def scrapeBoom() = {
+    println(s"Scrapping Boom Studios Comics...")
+    createPublisherCsv(boomDoc,"boomStudios")
+    println(s"Scrape Complete for Boom! Studios!")
+  }
+  def scrapeMarvel() = {
+    println(s"Scrapping Marvel Comics...")
+    createPublisherCsv(marvelDoc,"marvelComics")
+    println(s"Scrape Complete for Marvel Comics!")
+  }
+  def scrapeDc() = {
+    println(s"Scrapping DC Comics...")
+    createPublisherCsv(dcDoc,"dcComics")
+    println(s"Scrape Complete for DC Comics!")
+  }
+  def scrapeValiant() = {
+    println(s"Scrapping Valiant Comics...")
+    createPublisherCsv(valiantDoc,"valiantComics")
+    println(s"Scrape Complete for Valiant Comics!")
+  }
+  def scrapeImage() = {
+    println(s"Scrapping Image Comics...")
+    createPublisherCsv(imageDoc,"imageComics")
+    println(s"Scrape Complete for Image Comics!")
+  }
+  def scrapeDarkHorse() = {
+    println(s"Scrapping Dark Horse Comics...")
+    createPublisherCsv(darkHorseDoc,"darkHorseComics")
+    println(s"Scrape Complete for Dark Horse Comics!")
+  }
+  def scrapeIdw() = {
+    println(s"Scrapping IDW Publishing Comics...")
+    createPublisherCsv(idwDoc,"idwPublishing")
+    println(s"Scrape Complete for IDW Publishing!")
+  }
+  def scrapeDynamite() = {
+    println(s"Scrapping Dynamite Entertainment Comics...")
+    createPublisherCsv(dynamiteDoc,"dynamiteEntertainment")
+    println(s"Scrape Complete for Dynamite Entertainment!")
+  }
+  def scrapeAfterShock() = {
+    println(s"Scrapping Aftershock Comics...")
+    createPublisherCsv(aftershockDoc,"aftershockComics")
+    println(s"Scrape Complete for Aftershock Comics!")
+  }
+  def scrapeTitan() = {
+    println(s"Scrapping Titan Comics...")
+    createPublisherCsv(titanDoc,"titanBooks")
+    println(s"Scrape Complete for Titan Comics!")
+  }
+  def scrapeActionLab() = {
+    println(s"Scrapping Action Lab Comics...")
+    createPublisherCsv(actionLab,"actionLabComics")
+    println(s"Scrape Complete for Action Lab Comics!")
+  }
+  def scrapeZenescope() = {
+    println(s"Scrapping Zenescope Comics...")
+    createPublisherCsv(zenescopeDoc,"zenescopeEntertainment")
+    println(s"Scrape Complete for Zenescope Entertainment!")
+  }
+  def scrapeOniPress() = {
+    println(s"Scrapping Oni Press Comics...")
+    createPublisherCsv(onipressDoc,"oniPress")
+    println(s"Scrape Complete for Oni Press Comics!")
+  }
+  def scrapeVertigo() = {
+    println(s"Scrapping Vertigo Comics...")
+    createPublisherCsv(vertigoDoc,"vertigo")
+    println(s"Scrape Complete for Vertigo Comics!")
+  }
+
+
+  def scrapeAllComicPublisherData() = {
+    scrapeMarvel
+    scrapeDc
+    scrapeImage
+    scrapeDarkHorse
+    scrapeIdw
+    scrapeBoom
+    scrapeValiant
+    scrapeDynamite
+    scrapeAfterShock
+    scrapeTitan
+    scrapeActionLab
+    scrapeZenescope
+    scrapeOniPress
+    scrapeVertigo
+    println(s"Scrape Complete for All Comic Publishers!")
   }
 
 }
