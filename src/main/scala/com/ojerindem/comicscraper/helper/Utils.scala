@@ -66,13 +66,15 @@ object Utils {
   def caseClassToString(comic: ComicIssueDetail) = {
     val comicStr = comic.toString
     val comicLength = comicStr.length
-    comicStr
+    s"${
+      comicStr
       .substring(0,comicLength - 1)
       .replaceAll("\"","")
       .replaceAll("\\w(,)\\s","\\w ")
       .replaceAll(",","\",\"")
       .replaceAll("ComicIssueDetail\\(", "\"")
       .replaceAll("\\)\\)", "\\)\"") + "\""
+    }\n"
   }
 
   private def formatMonth(month: String) = {
@@ -89,8 +91,8 @@ object Utils {
       case "Oct" => "-10"
       case "Nov" => "-11"
       case "Dec" => "-12"
-      case "Present" => "2099-00"
-      case _ => "-00"
+      case "Pre" => "2099-00"
+      case _ => ""
     }
     formattedMonth
 
@@ -113,12 +115,20 @@ object Utils {
   }
 
   def formatReleaseDate(date: String) = {
-    val regex = "(\\w+)\\s(\\d+)\\s(\\d+)".r
+    val regex = "(\\w+)\\s(\\d+)\\s(\\d{4}+)".r
     val formattedReleaseDate = Option(date) match {
       case Some(value) => {
         val regex(month,day,year) = date
 
         val formattedMonth = formatMonth(month)
+        /*
+        Uncomment for extra check before concatenating the year month day into a release date
+        Not necessary as no records show this behaviour
+         */
+        /*val formattedMonth = processedMonth match {
+          case "" => "-00"
+          case _ => processedMonth
+        }*/
 
         s"$year$formattedMonth-$day"
       }
@@ -127,7 +137,12 @@ object Utils {
     formattedReleaseDate
   }
 
+  val formattedDate =
+    java.time.LocalDate.now
+      .toString
+      .replaceAll("-","")
+
   def getFilePath(fileName: String) =
-    new File(s"${Paths.get(".").toAbsolutePath.toString.replace(".","")}/${fileName}.csv")
+    new File(s"${Paths.get(".").toAbsolutePath.toString.replace(".","")}/${fileName}_$formattedDate.csv")
 
 }

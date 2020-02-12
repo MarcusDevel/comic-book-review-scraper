@@ -11,6 +11,7 @@
 .lib/
 .idea/
 dist/*
+zip_and_csv_files/
 target/
 lib_managed/
 src_managed/

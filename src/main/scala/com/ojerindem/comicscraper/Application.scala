@@ -39,7 +39,7 @@ object Application extends App {
     case "titan" =>
       scrapeTitan
     case "action-lab" =>
-      scrapeActionLab()
+      scrapeActionLab
     case "zenescope" =>
       scrapeZenescope
     case "oni-press" =>

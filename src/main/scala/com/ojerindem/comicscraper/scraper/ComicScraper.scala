@@ -28,7 +28,7 @@ object ComicScraper {
           val releaseDate = try {comicIndividualIssueDoc.select("#issue-summary a").text } catch{case x: IndexOutOfBoundsException => ""}
           val formattedReleaseDate = releaseDate.replaceAll(",","")
 
-          "(\\w+)\\s(\\d+)\\s(\\d+)".r.findFirstIn(formattedReleaseDate) match {
+          "(\\w+)\\s(\\d+)\\s(\\d{4}+)".r.findFirstIn(formattedReleaseDate) match {
             case Some(value) => formatReleaseDate(value)
             case None => ""
           }
@@ -39,8 +39,11 @@ object ComicScraper {
     }
   }
 
+  /*
+  Refactor
+   */
   private def getSpecificIssueDetails(doc: Document, elem: Element,url: String) = {
-    val regex = "(\\d+|\\w+)".r
+    val regex = "#*(.*)".r
     val name = try {doc.select(".container h1 span").get(0).text() } catch{case x: IndexOutOfBoundsException => ""}
     val publisher = try {doc.select("#issue-summary a").get(0).text() } catch{case x: IndexOutOfBoundsException => ""}
     val releaseStart = try {formatDate(doc.select("#issue-summary span").get(1).text()).releaseStart } catch{case x: IndexOutOfBoundsException => ""}
@@ -54,7 +57,15 @@ object ComicScraper {
     val userIssueReviews = try {(elem.select(".info a").get(4).text) } catch{case x: IndexOutOfBoundsException => ""}
     val regexIssueNum = regex.findFirstMatchIn(issueNum)
     val cleanIssueNum = regexIssueNum match {
-      case Some(value) => value.group(1).toString
+      case Some(value) =>
+        val someValue = value.group(1).toString
+        someValue.contains("-") match {
+          case true =>
+            someValue
+              .replaceAll(" ","-")
+              .replaceAll("#","")
+          case false => value.group(1).toString
+        }
       case None => ""
     }
     val formattedUrl = s"$url/$cleanIssueNum"
@@ -101,14 +112,19 @@ object ComicScraper {
     try { writer.append("url,publisher,name,writer,artist,release_date,release_start,release_end,issue_number,critic_review_score,user_review_score,critic_review_count,user_review_count").append("\n") }
     for (url <- getPublisherComicUrls(doc).par)
       yield {
-        val comicUrl = Jsoup.connect(url).validateTLSCertificates(false).get()
-        val numOfIssues = getComicIssueCount(comicUrl)
-        val issueDetails = getComicIssueDetails(comicUrl,url,numOfIssues)
-        for (issueDetail <- issueDetails)
-          yield {
-            val comicIssueDetailCaseClass = caseClassToString(issueDetail)
-            try { writer.append(comicIssueDetailCaseClass).append("\n") }
-          }
+        try {
+          val comicUrl = Jsoup.connect(url).validateTLSCertificates(false).get()
+          val numOfIssues = getComicIssueCount(comicUrl)
+          val issueDetails = getComicIssueDetails(comicUrl,url,numOfIssues)
+          for (issueDetail <- issueDetails)
+            yield {
+              val comicIssueDetailCaseClass = caseClassToString(issueDetail)
+              try { writer.append(comicIssueDetailCaseClass)}
+            }
+
+        } catch {
+          case x: SocketTimeoutException => ""
+        }
       }
     writer.close
   }
