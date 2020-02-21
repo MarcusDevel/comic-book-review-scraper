@@ -8,8 +8,14 @@ import com.ojerindem.comicscraper.helper.Utils._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
+//required when using scala 2.12.X
+import collection.JavaConverters._
+
+/*
+Uncomment when using scala 2.13.X
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel.CollectionConverters._
+ */
 
 object ComicScraper {
 
