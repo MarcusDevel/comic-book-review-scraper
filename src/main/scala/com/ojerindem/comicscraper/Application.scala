@@ -17,52 +17,52 @@ object Application extends App {
    */
   comic match {
     case "all" =>
-      println(s"Scrapping Boom Studios Comics...")
-      createPublisherCsv(boomDoc,"boomStudios")
-      println(s"Scrapping Image Comics...")
-      createPublisherCsv(imageDoc,"imageComics")
-      println(s"Scrapping Marvel Comics...")
-      createPublisherCsv(marvelDoc,"marvelComics")
-      println(s"Scrapping DC Comics...")
-      createPublisherCsv(dcDoc,"dcComics")
-      println(s"Scrapping Valiant Comics...")
-      createPublisherCsv(valiantDoc,"valiantComics")
-      println(s"Scrapping IDW Publishing Comics...")
-      createPublisherCsv(idwDoc,"idwPublishing")
-      println(s"Scrapping Dark Horse Comics...")
-      createPublisherCsv(darkHorseDoc,"darkHorseComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeAllComicPublisherData
     case "boom" =>
-      println(s"Scrapping Boom Studios Comics...")
-      createPublisherCsv(boomDoc,"boomStudios")
-      println(s"Scrape Complete for $comic!")
+      scrapeBoom
     case "marvel" =>
-      println(s"Scrapping Marvel Comics...")
-      createPublisherCsv(marvelDoc,"marvelComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeMarvel
     case "dc" =>
-      println(s"Scrapping DC Comics...")
-      createPublisherCsv(dcDoc,"dcComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeDc
     case "image" =>
-      println(s"Scrapping Image Comics...")
-      createPublisherCsv(imageDoc,"imageComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeImage
     case "valiant" =>
-      println(s"Scrapping Valiant Comics...")
-      createPublisherCsv(valiantDoc,"valiantComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeValiant
     case "idw" =>
-      println(s"Scrapping IDW Publishing Comics...")
-      createPublisherCsv(idwDoc,"idwComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeIdw
     case "dark-horse" =>
-      println(s"Scrapping Dark Horse Comics...")
-      createPublisherCsv(idwDoc,"darkHorseComics")
-      println(s"Scrape Complete for $comic!")
+      scrapeDarkHorse
+    case "dynamite" =>
+      scrapeDynamite
+    case "aftershock" =>
+      scrapeAfterShock
+    case "titan" =>
+      scrapeTitan
+    case "action-lab" =>
+      scrapeActionLab
+    case "zenescope" =>
+      scrapeZenescope
+    case "oni-press" =>
+      scrapeOniPress
+    case "vertigo" =>
+      scrapeVertigo
     case _ =>
-      throw new Exception("Argument provided is not a recognized publisher. Please provide which comics to scrape (marvel,dc.image,idw,boom,valiant,dark-horse,all")
-
+      throw new Exception(
+        "Argument provided is not a recognized publisher. Please provide which comics to scrape:\n" +
+          "- marvel\n" +
+          "- dc\n" +
+          "- image\n" +
+          "- idw\n" +
+          "- boom\n" +
+          "- valiant\n" +
+          "- dark-horse\n" +
+          "- dynamite\n" +
+          "- aftershock\n" +
+          "- titan\n" +
+          "- action-lab\n" +
+          "- zenescope\n" +
+          "- oni-press\n" +
+          "- vertigo\n" +
+          "- all\n")
   }
-
 }

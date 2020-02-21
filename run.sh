@@ -13,10 +13,18 @@ chmod +x *.jar
 
 echo "Creating docker image ..."
 docker build -t comic-scraper .
+
 echo "Running comic scraper ..."
 docker run --rm -v $PWD:/opt/app comic-scraper $1
+
 echo "Creating zip ..."
+echo "List of .csvs to zip ..."
+ls *.csv
 zip comic-reviews.zip *.csv
-echo"Cleaning up...."
+
+echo "Cleaning up...."
+mkdir zip_and_csv_filess
+mv *.csv *.zip zip_and_csv_files/
+ls zip_and_csv_files/
 rm *.jar
-rm -r target
+rm -r target/

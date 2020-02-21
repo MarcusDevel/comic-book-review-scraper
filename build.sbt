@@ -1,4 +1,4 @@
-name := "comic-review-scraper"
+name := "comic-book-review-scraper"
 
 version := "2.0"
 
