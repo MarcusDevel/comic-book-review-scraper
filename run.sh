@@ -23,7 +23,7 @@ ls *.csv
 zip comic-reviews.zip *.csv
 
 echo "Cleaning up...."
-mkdir zip_and_csv_filess
+mkdir zip_and_csv_files
 mv *.csv *.zip zip_and_csv_files/
 ls zip_and_csv_files/
 rm *.jar
