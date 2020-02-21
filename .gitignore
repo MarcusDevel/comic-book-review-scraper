@@ -10,6 +10,8 @@
 .history
 .lib/
 .idea/
+.idea
+.idea/*
 dist/*
 zip_and_csv_files/
 target/
