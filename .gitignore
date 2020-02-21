@@ -9,9 +9,8 @@
 .cache-tests
 .history
 .lib/
-.idea/*
 .idea/
-.idea
+.idea/modules/
 dist/*
 zip_and_csv_files/
 target/
