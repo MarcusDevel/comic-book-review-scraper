@@ -1,5 +1,7 @@
 package com.ojerindem.comicscraper.helper
 
+import java.sql.Date
+
 object ParseObjects {
 
   case class ComicIssueDetail
@@ -16,7 +18,25 @@ object ParseObjects {
     criticReviewScore: String,
     userReviewScore: String,
     criticReviewCount: String,
-    userReviewCount: String)
+    userReviewCount: String
+  )
+
+  case class ComicIssueDetailCleaned
+  (
+    url: String,
+    publisher: String,
+    name: String,
+    writer: String,
+    artist: String,
+    releaseDate: Date,
+    releaseStart: String,
+    releaseEnd: String,
+    issueNumber: String,
+    criticReviewScore: BigDecimal,
+    userReviewScore: BigDecimal,
+    criticReviewCount: Int,
+    userReviewCount: Int
+  )
 
   case class ReleaseDateReleaseEndTuple
   (

@@ -27,6 +27,9 @@ assemblyJarName in assembly := s"comic-review-scraper-2.0-assembly.jar"
 // Merge strategy for assembling conflicts
 assemblyMergeStrategy in assembly := {
   case PathList("reference.conf") => MergeStrategy.concat
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
+
+mainClass in (Compile, packageBin) := Some("com.ojerindem.comicscraper.Application")

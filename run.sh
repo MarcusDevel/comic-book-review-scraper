@@ -26,5 +26,5 @@ echo "Cleaning up...."
 mkdir zip_and_csv_files
 mv *.csv *.zip zip_and_csv_files/
 ls zip_and_csv_files/
-rm *.jar
+##rm *.jar
 rm -r target/
